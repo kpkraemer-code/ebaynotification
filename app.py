@@ -20,7 +20,8 @@ DB_USER = os.getenv("PGUSER")
 DB_PASSWORD = os.getenv("PGPASSWORD")
 
 # eBay verification token (you set this when creating the Destination)
-EBAY_VERIFICATION_TOKEN = os.getenv("EBAY_VERIFICATION_TOKEN")  # 32-80 chars
+# EBAY_VERIFICATION_TOKEN = os.getenv("EBAY_VERIFICATION_TOKEN")  # 32-80 chars
+EBAY_VERIFICATION_TOKEN = "MiDwEsT_dIeSeL_Kyle_kRaEmEr_ThisIsWild"
 
 # Logging
 logging.basicConfig(level=logging.INFO)
