@@ -83,7 +83,14 @@ def ebay_webhook():
 
         logger.info(f"Challenge responded using: {endpoint1}")
         return jsonify({"challengeResponse": challenge_response}), 200
-
+@app.route('/debug-challenge', methods=['GET'])
+def debug_challenge():
+    return jsonify({
+        "full_url": request.url,
+        "url_root": request.url_root,
+        "path": request.path,
+        "args": dict(request.args)
+    })
     # Normal notification handling below...
     # (keep your existing payload code here)
 
