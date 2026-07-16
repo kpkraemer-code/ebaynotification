@@ -61,23 +61,27 @@ def init_db():
     logger.info("Database initialized.")
 
 # ========================= WEBHOOK ENDPOINT =========================
-@app.route('/ebay-webhook', methods=['POST', 'GET'])
+@app.route('/ebay-webhook', methods=['GET', 'POST'])
 def ebay_webhook():
-    # Handle Verification Challenge (eBay uses GET for challenge)
+    # === VERIFICATION CHALLENGE ===
     challenge_code = request.args.get('challenge_code')
     if challenge_code:
         if not EBAY_VERIFICATION_TOKEN:
-            logger.error("EBAY_VERIFICATION_TOKEN is not set")
-            return jsonify({"error": "Server misconfigured"}), 500
-        
-        # Build the exact string eBay expects
-        endpoint = request.url_root.rstrip('/') + request.path
-        
+            return jsonify({"error": "Verification token not configured"}), 500
+
+        # Try multiple possible endpoint variations (most common fix)
+        base_url = request.url_root.rstrip('/')
+        path = request.path.rstrip('/')
+        endpoint = base_url + path
+
         data = challenge_code + EBAY_VERIFICATION_TOKEN + endpoint
-        challenge_response = hashlib.sha256(data.encode('utf-8')).hexdigest()
-        
-        logger.info(f"Challenge verified successfully for endpoint: {endpoint}")
-        return jsonify({"challengeResponse": challenge_response}), 200
+        response = hashlib.sha256(data.encode('utf-8')).hexdigest()
+
+        logger.info(f"Challenge response generated using: {endpoint}")
+        return jsonify({"challengeResponse": response}), 200
+
+    # === NORMAL NOTIFICATION ===
+    # ... your existing notification code here ...
 
     # Normal Notification
     try:
