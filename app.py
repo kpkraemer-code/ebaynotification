@@ -60,21 +60,23 @@ def init_db():
     logger.info("Database initialized.")
 
 # ========================= WEBHOOK ENDPOINT =========================
-@app.route('/ebay-webhook', methods=['POST'])
+@app.route('/ebay-webhook', methods=['POST', 'GET'])
 def ebay_webhook():
-    # Handle eBay Destination Verification Challenge
+    # Handle Verification Challenge (eBay uses GET for challenge)
     challenge_code = request.args.get('challenge_code')
     if challenge_code:
         if not EBAY_VERIFICATION_TOKEN:
-            logger.error("Verification token not set")
+            logger.error("EBAY_VERIFICATION_TOKEN is not set")
             return jsonify({"error": "Server misconfigured"}), 500
         
+        # Build the exact string eBay expects
         endpoint = request.url_root.rstrip('/') + request.path
-        data = challenge_code + EBAY_VERIFICATION_TOKEN + endpoint
-        response = hashlib.sha256(data.encode('utf-8')).hexdigest()
         
-        logger.info("Responded to eBay verification challenge")
-        return jsonify({"challengeResponse": response}), 200
+        data = challenge_code + EBAY_VERIFICATION_TOKEN + endpoint
+        challenge_response = hashlib.sha256(data.encode('utf-8')).hexdigest()
+        
+        logger.info(f"Challenge verified successfully for endpoint: {endpoint}")
+        return jsonify({"challengeResponse": challenge_response}), 200
 
     # Normal Notification
     try:
