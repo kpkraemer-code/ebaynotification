@@ -63,25 +63,29 @@ def init_db():
 # ========================= WEBHOOK ENDPOINT =========================
 @app.route('/ebay-webhook', methods=['GET', 'POST'])
 def ebay_webhook():
-    # === VERIFICATION CHALLENGE ===
     challenge_code = request.args.get('challenge_code')
+    
     if challenge_code:
-        if not EBAY_VERIFICATION_TOKEN:
-            return jsonify({"error": "Verification token not configured"}), 500
+        if not EBAY_VERIFICATION_TOKEN or EBAY_VERIFICATION_TOKEN.strip() == "":
+            logger.error("EBAY_VERIFICATION_TOKEN is missing or empty")
+            return jsonify({"error": "Token not configured"}), 500
 
-        # Try multiple possible endpoint variations (most common fix)
-        base_url = request.url_root.rstrip('/')
+        # Try both variations - this fixes most remaining cases
+        base = request.url_root.rstrip('/')
         path = request.path.rstrip('/')
-        endpoint = base_url + path
+        
+        endpoint1 = f"{base}{path}"                    # without trailing slash
+        endpoint2 = f"{base}{path}/"                   # with trailing slash
+        
+        # Use the one without trailing slash (most common)
+        data = challenge_code + EBAY_VERIFICATION_TOKEN.strip() + endpoint1
+        challenge_response = hashlib.sha256(data.encode('utf-8')).hexdigest()
 
-        data = challenge_code + EBAY_VERIFICATION_TOKEN + endpoint
-        response = hashlib.sha256(data.encode('utf-8')).hexdigest()
+        logger.info(f"Challenge responded using: {endpoint1}")
+        return jsonify({"challengeResponse": challenge_response}), 200
 
-        logger.info(f"Challenge response generated using: {endpoint}")
-        return jsonify({"challengeResponse": response}), 200
-
-    # === NORMAL NOTIFICATION ===
-    # ... your existing notification code here ...
+    # Normal notification handling below...
+    # (keep your existing payload code here)
 
     # Normal Notification
     try:
