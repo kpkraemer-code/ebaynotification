@@ -63,22 +63,24 @@ def init_db():
 # ========================= WEBHOOK ENDPOINT =========================
 @app.route('/ebay-webhook', methods=['GET', 'POST'])
 def ebay_webhook():
-    logger.info(f"Received request - Method: {request.method}")
-    logger.info(f"Headers: {dict(request.headers)}")
+    challenge_code = request.args.get('challenge_code')
     
-    if request.args.get('challenge_code'):
-        # ... your challenge code ...
-        logger.info("✓ Handled verification challenge")
-        return jsonify({"challengeResponse": ...}), 200
+    if challenge_code:
+        if not EBAY_VERIFICATION_TOKEN or EBAY_VERIFICATION_TOKEN.strip() == "":
+            logger.error("EBAY_VERIFICATION_TOKEN is missing")
+            return jsonify({"error": "Token not configured"}), 500
 
-    try:
-        payload = request.get_json(force=True) if request.data else None
-        logger.info(f"Received payload: {json.dumps(payload)[:500] if payload else 'No JSON'}")
-        # ... rest of code
-    except Exception as e:
-        logger.error(f"Error parsing payload: {e}")
-    
-    return jsonify({"status": "received"}), 200
+        # === FORCE HTTPS (Important for Railway) ===
+        base_url = request.url_root.replace("http://", "https://").rstrip('/')
+        path = request.path.rstrip('/')
+        
+        endpoint = f"{base_url}{path}"
+
+        data = challenge_code + EBAY_VERIFICATION_TOKEN.strip() + endpoint
+        challenge_response = hashlib.sha256(data.encode('utf-8')).hexdigest()
+
+        logger.info(f"Challenge responded using: {endpoint}")
+        return jsonify({"challengeResponse": challenge_response}), 200
 
     # ... rest of your normal notification code ...
         
