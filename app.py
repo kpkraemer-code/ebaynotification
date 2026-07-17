@@ -83,7 +83,16 @@ def ebay_webhook():
         return jsonify({"challengeResponse": challenge_response}), 200
 
     # ... rest of your normal notification code ...
-        
+
+@app.route('/ping', methods=['GET'])
+def ping():
+    logger.info(f"PING received at {datetime.now()}")
+    return jsonify({
+        "status": "alive",
+        "time": datetime.now().isoformat(),
+        "message": "Webhook is reachable"
+    }), 200
+
 @app.route('/debug-challenge', methods=['GET'])
 def debug_challenge():
     return jsonify({
